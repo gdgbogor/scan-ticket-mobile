@@ -29,6 +29,10 @@ fun Context.readCSV(uri: Uri): List<Array<String>> {
 object CsvField {
     const val IsAttended = "Is Attended"
     const val CheckInDate = "Checkin Date (UTC)"
+    const val IsRegular = "Regular Role"
+    const val TicketNumber = "Ticket number"
+    const val UserId = "User Id"
+    const val AttendedId = "Attended ID"
 }
 
 fun Context.shareCsv(eventName: String, listParticipant: List<Participant>) {

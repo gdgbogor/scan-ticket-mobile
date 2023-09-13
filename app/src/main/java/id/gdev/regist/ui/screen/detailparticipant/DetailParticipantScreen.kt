@@ -1,5 +1,6 @@
 package id.gdev.regist.ui.screen.detailparticipant
 
+import android.webkit.URLUtil
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,13 +14,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,10 +40,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -48,6 +57,7 @@ import androidx.navigation.NavController
 import id.gdev.regist.ui.component.ParticipantCardItem
 import id.gdev.regist.ui.component.rememberQrBitmapPainter
 import id.gdev.regist.ui.screen.main.MainArg
+import id.gdev.regist.utils.CsvField
 import id.gdev.regist.utils.DottedShape
 import id.gdev.regist.utils.PopMessage
 
@@ -58,6 +68,8 @@ fun DetailParticipantScreen(
 ) {
     val detailParticipantViewModel = hiltViewModel<DetailParticipantViewModel>()
     val participant by detailParticipantViewModel.participant.collectAsStateWithLifecycle()
+    var fullData by remember { mutableStateOf(mapOf<String, String>()) }
+
     val eventId by remember {
         mutableStateOf(
             navController.previousBackStackEntry
@@ -73,11 +85,18 @@ fun DetailParticipantScreen(
     }
 
     val popMessage = PopMessage(LocalContext.current)
-    var isDetailOpen by remember { mutableStateOf(false) }
+    var isDetailOpen by remember { mutableStateOf(true) }
 
     LaunchedEffect(eventId, participantId) {
         if (eventId.isNotBlank() && participantId.isNotBlank()) {
+            println("EventId = $eventId, participantID = $participantId")
             detailParticipantViewModel.getDetailParticipant(eventId, participantId)
+        }
+    }
+
+    LaunchedEffect(participant) {
+        if (participant.fullData.isNotEmpty()) {
+            fullData = participant.fullData
         }
     }
 
@@ -93,6 +112,19 @@ fun DetailParticipantScreen(
                             Icon(imageVector = Icons.Rounded.ArrowBack, contentDescription = "Back")
                         }
                     }
+                },
+                actions = {
+                    if (participant.fullData[CsvField.IsRegular] == "FALSE") Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Green.copy(0.3f)
+                        )
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(8.dp),
+                            text = "Partner"
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
                 }
             )
         }
@@ -163,7 +195,34 @@ fun DetailParticipantScreen(
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
-                                            Text(text = data.value)
+                                            if (URLUtil.isValidUrl(data.value)) Card(
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = Color.Blue.copy(0.1f)
+                                                ),
+                                                onClick = {}
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(
+                                                        horizontal = 8.dp,
+                                                        vertical = 4.dp
+                                                    ),
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                    verticalAlignment = CenterVertically
+                                                ) {
+                                                    Text(
+                                                        modifier = Modifier.weight(1f),
+                                                        text = data.value,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(text = "|")
+                                                    Icon(
+                                                        modifier = Modifier.size(20.dp),
+                                                        imageVector = Icons.Rounded.OpenInNew,
+                                                        contentDescription = ""
+                                                    )
+                                                }
+                                            } else Text(text = data.value)
                                             Spacer(modifier = Modifier.height(8.dp))
                                         }
                                     }
@@ -183,10 +242,7 @@ fun DetailParticipantScreen(
                             Image(
                                 modifier = Modifier.padding(8.dp),
                                 painter = rememberQrBitmapPainter(
-                                    content = "12345:${
-                                        participant.fullData["Ticket number"]
-                                            ?.removePrefix("GOOGA23")
-                                    }",
+                                    content = "${fullData[CsvField.UserId]}:${fullData[CsvField.AttendedId]}",
                                     size = 200.dp
                                 ), contentDescription = ""
                             )
