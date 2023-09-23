@@ -15,6 +15,9 @@ navigation = "2.5.0"
 hilt = "1.1.0-alpha01"
 hilt-android = "2.44"
 qr-code = "3.5.1"
+firebase-crashlytics-ktx = "18.4.3"
+firebase-analytics-ktx = "21.3.0"
+paging = "3.2.1"
 
 [libraries]
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -37,6 +40,10 @@ constraint-layout = { group = "androidx.constraintlayout", name = "constraintlay
 navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 hilt = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt" }
 qr-genartor = { group = "com.google.zxing", name = "core", version.ref = "qr-code" }
+firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx", version.ref = "firebase-crashlytics-ktx" }
+firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx", version.ref = "firebase-analytics-ktx" }
+paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "agp" }

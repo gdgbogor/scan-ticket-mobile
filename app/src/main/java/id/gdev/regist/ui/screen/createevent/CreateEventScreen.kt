@@ -43,6 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Timestamp
 import id.gdev.regist.domain.model.Event
 import id.gdev.regist.ui.component.DatePickerBuilder
+import id.gdev.regist.ui.component.LoadingDialog
 import id.gdev.regist.ui.component.TimePickerBuilder
 import id.gdev.regist.ui.theme.RegistrationAppTheme
 import id.gdev.regist.utils.TimeUtils.dateSimple
@@ -118,6 +119,8 @@ fun CreateEventScreen(
             set(Calendar.MINUTE, it.get(Calendar.MINUTE))
         }
     }
+
+    if (isLoading) LoadingDialog {}
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

@@ -31,8 +31,8 @@ object CsvField {
     const val CheckInDate = "Checkin Date (UTC)"
     const val IsRegular = "Regular Role"
     const val TicketNumber = "Ticket number"
-    const val UserId = "User Id"
-    const val AttendedId = "Attended ID"
+    const val UserId = "User ID"
+    const val AttendedId = "Attendee ID"
 }
 
 fun Context.shareCsv(eventName: String, listParticipant: List<Participant>) {

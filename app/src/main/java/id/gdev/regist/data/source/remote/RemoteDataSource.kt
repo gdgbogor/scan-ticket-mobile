@@ -1,16 +1,22 @@
 package id.gdev.regist.data.source.remote
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import id.gdev.regist.data.Result
+import id.gdev.regist.data.paging.ParticipantPagingSource
 import id.gdev.regist.data.source.remote.collection.EventCollection
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
 import id.gdev.regist.data.source.remote.collection.toEvent
 import id.gdev.regist.data.source.remote.collection.toParticipant
 import id.gdev.regist.domain.model.Event
+import id.gdev.regist.domain.model.FilterField
 import id.gdev.regist.domain.model.Participant
 import id.gdev.regist.utils.CreateLog
 import id.gdev.regist.utils.CreateLog.d
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
@@ -68,17 +74,13 @@ class RemoteDataSource @Inject constructor(
         emit(Result.failed("Failed add new participant"))
     }.flowOn(Dispatchers.IO)
 
-    suspend fun getAllParticipant(eventId: String) = callbackFlow<Result<List<Participant>>> {
-        trySend(Result.loading())
-        fireStoreEvent.getAllParticipant(eventId) { isSuccess, participantCollections ->
-            if (isSuccess) trySend(Result.success(participantCollections.map { it.toParticipant() }))
-            else trySend(Result.failed("Failed Get All Participant"))
-        }
-        awaitClose()
-    }.catch {
-        CreateLog.d("Failed = ${it.message}")
-        emit(Result.failed("Failed Get All Participant"))
-    }.flowOn(Dispatchers.IO)
+    fun getAllParticipant(
+        eventId: String,
+        filterField: FilterField
+    ): Flow<PagingData<Participant>> =
+        Pager(PagingConfig(pageSize = 25)) {
+            ParticipantPagingSource(fireStoreEvent.getAllParticipant(eventId, filterField))
+        }.flow
 
     suspend fun getDetailParticipant(
         eventId: String, participantId: String

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBack
@@ -35,12 +34,18 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import getListFilter
+import id.gdev.regist.ui.component.ErrorMessage
+import id.gdev.regist.ui.component.LoadingNextPageItem
+import id.gdev.regist.ui.component.PageLoader
 import id.gdev.regist.ui.component.ParticipantCardItem
 import id.gdev.regist.ui.screen.main.MainArg
 import id.gdev.regist.ui.screen.main.MainRouter
 import id.gdev.regist.ui.screen.scanner.checkModule
 import id.gdev.regist.ui.screen.scanner.getScanner
+import id.gdev.regist.utils.CsvField
 import id.gdev.regist.utils.Filter
 import id.gdev.regist.utils.PopMessage
 import id.gdev.regist.utils.readCSV
@@ -58,7 +63,7 @@ fun DetailEventScreen(
     val detailEventViewModel = hiltViewModel<DetailEventViewModel>()
     val scanner by remember { mutableStateOf(getScanner(context)) }
     val event by detailEventViewModel.event.collectAsStateWithLifecycle()
-    val listOfParticipant by detailEventViewModel.participants.collectAsStateWithLifecycle()
+    val listOfParticipant = detailEventViewModel.participants.collectAsLazyPagingItems()
     var showFilter by remember { mutableStateOf(false) }
     val listOfFilter by remember {
         mutableStateOf(getListFilter(listOf(Filter.CheckInDate, Filter.Title)))
@@ -91,7 +96,9 @@ fun DetailEventScreen(
             FilterSheet(listFilter = listOfFilter) { index, sort ->
                 listOfFilter.map { filter -> filter.selected = false }
                 listOfFilter[index].selected = true
-                detailEventViewModel.filterData(listOfFilter[index].name, sort)
+                if (eventId?.isNotBlank() == true) {
+                    detailEventViewModel.filterData(eventId, listOfFilter[index].name, sort)
+                }
                 showFilter = false
             }
         }
@@ -112,7 +119,7 @@ fun DetailEventScreen(
                         Icon(imageVector = Icons.Rounded.FilterList, contentDescription = "filter")
                     }
                     IconButton(onClick = {
-                        context.shareCsv(event.name, listOfParticipant)
+                        context.shareCsv(event.name, listOfParticipant.itemSnapshotList.items)
                     }) {
                         Icon(imageVector = Icons.Rounded.Share, contentDescription = "share")
                     }
@@ -121,13 +128,12 @@ fun DetailEventScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                if (listOfParticipant.isNotEmpty())
+                if (listOfParticipant.itemCount != 0)
                     checkModule(context, scanner) { isSuccess, message ->
                         if (isSuccess) scanner.startScan()
                             .addOnSuccessListener { barcode ->
-                                listOfParticipant.find {
-                                    val resultData =
-                                        it.fullData["Ticket number"]?.removePrefix("GOOGA23")
+                                listOfParticipant.itemSnapshotList.items.find {
+                                    val resultData = it.fullData[CsvField.AttendedId]
                                     val resultCode = barcode.rawValue.toString().split(":").last()
                                     resultData == resultCode
                                 }.let { participant ->
@@ -148,8 +154,8 @@ fun DetailEventScreen(
                 else startForResult.launch("text/*")
             }) {
                 Icon(
-                    imageVector = if (listOfParticipant.isNotEmpty()) Icons.Rounded.QrCodeScanner else Icons.Rounded.Add,
-                    contentDescription = if (listOfParticipant.isNotEmpty()) "Scan QR" else "Add File"
+                    imageVector = if (listOfParticipant.itemCount != 0) Icons.Rounded.QrCodeScanner else Icons.Rounded.Add,
+                    contentDescription = if (listOfParticipant.itemCount != 0) "Scan QR" else "Add File"
                 )
             }
         }
@@ -161,13 +167,42 @@ fun DetailEventScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (listOfParticipant.isNotEmpty()) items(listOfParticipant) { participants ->
-                ParticipantCardItem(participant = participants) { participant ->
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set(MainArg.EVENT_ID, eventId)
-                        set(MainArg.PARTICIPANT_ID, participant.id)
+            if (listOfParticipant.itemCount != 0) items(listOfParticipant.itemCount) { index ->
+                listOfParticipant[index]?.let { data ->
+                    ParticipantCardItem(participant = data) { participant ->
+                        navController.currentBackStackEntry?.savedStateHandle?.apply {
+                            set(MainArg.EVENT_ID, eventId)
+                            set(MainArg.PARTICIPANT_ID, participant.id)
+                        }
+                        navController.navigate(MainRouter.DETAIL_PARTICIPANT)
                     }
-                    navController.navigate(MainRouter.DETAIL_PARTICIPANT)
+                }
+            }
+            listOfParticipant.loadState.apply {
+                when {
+                    refresh is LoadState.Loading -> {
+                        item { PageLoader(modifier = Modifier.fillParentMaxSize()) }
+                    }
+
+                    refresh is LoadState.Error -> {
+                        item {
+                            ErrorMessage(
+                                modifier = Modifier.fillParentMaxSize(),
+                                onClickRetry = { listOfParticipant.retry() })
+                        }
+                    }
+
+                    append is LoadState.Loading -> {
+                        item { LoadingNextPageItem(modifier = Modifier) }
+                    }
+
+                    append is LoadState.Error -> {
+                        item {
+                            ErrorMessage(
+                                modifier = Modifier,
+                                onClickRetry = { listOfParticipant.retry() })
+                        }
+                    }
                 }
             }
         }

@@ -39,6 +39,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
 import id.gdev.regist.ui.component.LargeDropdownMenu
+import id.gdev.regist.ui.component.LoadingDialog
 import id.gdev.regist.ui.component.ParticipantCardItem
 import id.gdev.regist.ui.screen.main.MainArg
 import id.gdev.regist.ui.theme.RegistrationAppTheme
@@ -50,6 +51,7 @@ fun SetupScreen(
 ) {
     val setupViewModel = hiltViewModel<SetupViewModel>()
     val context = LocalContext.current
+    val loading by setupViewModel.isLoading.collectAsStateWithLifecycle()
     val listOfHeader by remember {
         mutableStateOf(
             navController.previousBackStackEntry
@@ -63,6 +65,8 @@ fun SetupScreen(
                 ?.savedStateHandle?.get<String>(MainArg.EVENT_ID) ?: ""
         )
     }
+
+    if (loading) LoadingDialog("Adding Participant ...")
 
     val previewParticipant by setupViewModel.previewParticipant.collectAsStateWithLifecycle()
     val addParticipantState by setupViewModel.addParticipantState.collectAsStateWithLifecycle()

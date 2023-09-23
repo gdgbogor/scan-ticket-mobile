@@ -5,6 +5,7 @@ plugins {
     kotlin("kapt")
     alias(libs.plugins.hilt.android)
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -76,9 +77,13 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.44")
     implementation("com.google.firebase:firebase-analytics-ktx:21.3.0")
     implementation("com.google.firebase:firebase-firestore-ktx:24.7.0")
+    implementation(libs.firebase.crashlytics.ktx)
     kapt("com.google.dagger:hilt-android-compiler:2.44")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0-beta01")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+    //Paging Compose
+    implementation(libs.paging.compose)
+    implementation(libs.paging.runtime)
     implementation(libs.qr.genartor)
 
 

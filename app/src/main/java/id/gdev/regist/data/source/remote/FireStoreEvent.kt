@@ -2,12 +2,15 @@ package id.gdev.regist.data.source.remote
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import id.gdev.regist.data.source.remote.collection.EventCollection
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
+import id.gdev.regist.domain.model.FilterField
 import id.gdev.regist.utils.CreateLog
 import id.gdev.regist.utils.CreateLog.d
+import id.gdev.regist.utils.FilterSort
 
 class FireStoreEvent {
 
@@ -108,30 +111,15 @@ class FireStoreEvent {
 
     }
 
-    fun getAllParticipant(
-        eventId: String,
-        onResult: (isSuccess: Boolean, List<ParticipantCollection>) -> Unit
-    ) {
-        fireStore.collection(FireStoreDocument.EVENT)
+    fun getAllParticipant(eventId: String, filterField: FilterField): Query {
+        return fireStore.collection(FireStoreDocument.EVENT)
             .document(eventId)
             .collection(FireStoreDocument.EVENT_PARTICIPANT)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    CreateLog.d("Listen failed = ${e.message}")
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null && !snapshot.isEmpty) {
-                    val listOfData = mutableListOf<ParticipantCollection>()
-                    snapshot.documents.forEach { docs ->
-                        docs.toObject(ParticipantCollection::class.java)?.let { listOfData.add(it) }
-                    }
-                    onResult.invoke(true, listOfData)
-                } else {
-                    CreateLog.d("Failed Data is Empty")
-                    onResult.invoke(false, listOf())
-                }
-            }
+            .orderBy(
+                filterField.field,
+                if (filterField.filterSort == FilterSort.ASC) Query.Direction.ASCENDING else Query.Direction.DESCENDING
+            )
+            .limit(25)
     }
 
     fun getDetailParticipant(
@@ -187,10 +175,12 @@ class FireStoreEvent {
             .document(eventId)
             .collection(FireStoreDocument.EVENT_PARTICIPANT)
             .document(participantId)
-            .update(mapOf(
-                "checkIn" to (valueUpdate == ValueUpdate.Increment),
-                "lastCheckInTime" to if (valueUpdate == ValueUpdate.Increment) Timestamp.now() else null
-            ))
+            .update(
+                mapOf(
+                    "checkIn" to (valueUpdate == ValueUpdate.Increment),
+                    "lastCheckInTime" to if (valueUpdate == ValueUpdate.Increment) Timestamp.now() else null
+                )
+            )
             .addOnSuccessListener {
                 fireStore.collection(FireStoreDocument.EVENT)
                     .document(eventId)

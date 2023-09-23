@@ -1,9 +1,11 @@
 package id.gdev.regist.data
 
+import androidx.paging.PagingData
 import id.gdev.regist.data.source.remote.RemoteDataSource
 import id.gdev.regist.data.source.remote.ValueUpdate
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
 import id.gdev.regist.domain.model.Event
+import id.gdev.regist.domain.model.FilterField
 import id.gdev.regist.domain.model.Participant
 import id.gdev.regist.domain.model.toCollection
 import id.gdev.regist.domain.repository.IRegistrationRepository
@@ -28,8 +30,11 @@ class RegistrationRepository @Inject constructor(
     ): Flow<Result<String>> =
         remoteDataSource.addNewParticipant(eventId, listParticipant)
 
-    override suspend fun getAllParticipant(eventId: String): Flow<Result<List<Participant>>> =
-        remoteDataSource.getAllParticipant(eventId)
+    override fun getAllParticipant(
+        eventId: String,
+        filterField: FilterField
+    ): Flow<PagingData<Participant>> =
+        remoteDataSource.getAllParticipant(eventId, filterField)
 
     override suspend fun getDetailParticipant(
         eventId: String,
