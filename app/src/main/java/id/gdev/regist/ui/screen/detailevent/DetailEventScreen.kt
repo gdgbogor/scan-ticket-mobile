@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,7 +38,9 @@ import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import getListFilter
+import id.gdev.regist.ui.component.EmptyPage
 import id.gdev.regist.ui.component.ErrorMessage
+import id.gdev.regist.ui.component.LoadingDialog
 import id.gdev.regist.ui.component.LoadingNextPageItem
 import id.gdev.regist.ui.component.PageLoader
 import id.gdev.regist.ui.component.ParticipantCardItem
@@ -45,9 +48,9 @@ import id.gdev.regist.ui.screen.main.MainArg
 import id.gdev.regist.ui.screen.main.MainRouter
 import id.gdev.regist.ui.screen.scanner.checkModule
 import id.gdev.regist.ui.screen.scanner.getScanner
-import id.gdev.regist.utils.CsvField
 import id.gdev.regist.utils.Filter
 import id.gdev.regist.utils.PopMessage
+import id.gdev.regist.utils.decode
 import id.gdev.regist.utils.readCSV
 import id.gdev.regist.utils.shareCsv
 
@@ -63,16 +66,33 @@ fun DetailEventScreen(
     val detailEventViewModel = hiltViewModel<DetailEventViewModel>()
     val scanner by remember { mutableStateOf(getScanner(context)) }
     val event by detailEventViewModel.event.collectAsStateWithLifecycle()
+    val isParticipantFound by detailEventViewModel.isParticipantFound.collectAsStateWithLifecycle()
+    val isLoading by detailEventViewModel.isLoading.collectAsStateWithLifecycle()
     val listOfParticipant = detailEventViewModel.participants.collectAsLazyPagingItems()
     var showFilter by remember { mutableStateOf(false) }
     val listOfFilter by remember {
-        mutableStateOf(getListFilter(listOf(Filter.CheckInDate, Filter.Title)))
+        mutableStateOf(getListFilter(listOf(Filter.CheckInDate, Filter.Title, Filter.Header, Filter.Subtitle)))
     }
 
     LaunchedEffect(Unit) {
         if (eventId?.isNotBlank() == true) {
             detailEventViewModel.getEventById(eventId)
             detailEventViewModel.getAllParticipant(eventId)
+        }
+    }
+
+    if (isLoading) LoadingDialog {}
+
+    LaunchedEffect(isParticipantFound) {
+        if (isParticipantFound.first) {
+            navController.currentBackStackEntry?.savedStateHandle?.apply {
+                set(MainArg.EVENT_ID, eventId)
+                set(MainArg.PARTICIPANT_ID, isParticipantFound.second)
+            }
+            detailEventViewModel.clearSearch()
+            navController.navigate(MainRouter.DETAIL_PARTICIPANT)
+        } else {
+            if (isParticipantFound.second.isNotBlank()) popMessage.show(isParticipantFound.second)
         }
     }
 
@@ -106,7 +126,13 @@ fun DetailEventScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = event.name) },
+                title = {
+                    Text(
+                        text = event.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(imageVector = Icons.Rounded.ArrowBack, contentDescription = "Back")
@@ -119,7 +145,7 @@ fun DetailEventScreen(
                         Icon(imageVector = Icons.Rounded.FilterList, contentDescription = "filter")
                     }
                     IconButton(onClick = {
-                        context.shareCsv(event.name, listOfParticipant.itemSnapshotList.items)
+                        detailEventViewModel.shareCsv(context, event)
                     }) {
                         Icon(imageVector = Icons.Rounded.Share, contentDescription = "share")
                     }
@@ -132,18 +158,14 @@ fun DetailEventScreen(
                     checkModule(context, scanner) { isSuccess, message ->
                         if (isSuccess) scanner.startScan()
                             .addOnSuccessListener { barcode ->
-                                listOfParticipant.itemSnapshotList.items.find {
-                                    val resultData = it.fullData[CsvField.AttendedId]
-                                    val resultCode = barcode.rawValue.toString().split(":").last()
-                                    resultData == resultCode
-                                }.let { participant ->
-                                    if (participant != null) {
-                                        navController.currentBackStackEntry?.savedStateHandle?.apply {
-                                            set(MainArg.EVENT_ID, eventId)
-                                            set(MainArg.PARTICIPANT_ID, participant.id)
-                                        }
-                                        navController.navigate(MainRouter.DETAIL_PARTICIPANT)
-                                    } else popMessage.show("Participant is Not Found")
+                                if (
+                                    barcode.rawValue.toString()
+                                        .isNotBlank() && !eventId.isNullOrBlank()
+                                ) {
+                                    detailEventViewModel.findParticipant(
+                                        eventId,
+                                        barcode.decode(event.barcodeEncoding)
+                                    )
                                 }
                             }
                             .addOnFailureListener { error ->
@@ -185,10 +207,14 @@ fun DetailEventScreen(
                     }
 
                     refresh is LoadState.Error -> {
+
                         item {
-                            ErrorMessage(
+                            if (listOfParticipant.itemCount == 0) EmptyPage(
+                                modifier = Modifier.fillParentMaxSize()
+                            ) else ErrorMessage(
                                 modifier = Modifier.fillParentMaxSize(),
-                                onClickRetry = { listOfParticipant.retry() })
+                                onClickRetry = { listOfParticipant.retry() }
+                            )
                         }
                     }
 

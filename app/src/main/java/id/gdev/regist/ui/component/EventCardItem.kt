@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import com.google.firebase.Timestamp
 import id.gdev.regist.domain.model.Event
 import id.gdev.regist.ui.theme.RegistrationAppTheme
+import id.gdev.regist.utils.BarcodeEncoding
 import id.gdev.regist.utils.TimeUtils.simple
 import java.util.Calendar
 
@@ -69,6 +70,7 @@ private fun PreviewEventCardItem(){
                 "Keras Community Day",
                 "Google Indonesia - SCBD, Pacific Century Place Tower Level 43",
                 Timestamp(calendar.time),
+                BarcodeEncoding.GDG,
                 0,
                 0,
             )

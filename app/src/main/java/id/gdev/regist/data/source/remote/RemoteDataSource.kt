@@ -14,6 +14,7 @@ import id.gdev.regist.domain.model.FilterField
 import id.gdev.regist.domain.model.Participant
 import id.gdev.regist.utils.CreateLog
 import id.gdev.regist.utils.CreateLog.d
+import id.gdev.regist.utils.LIMIT_DATA
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -78,9 +79,37 @@ class RemoteDataSource @Inject constructor(
         eventId: String,
         filterField: FilterField
     ): Flow<PagingData<Participant>> =
-        Pager(PagingConfig(pageSize = 25)) {
-            ParticipantPagingSource(fireStoreEvent.getAllParticipant(eventId, filterField))
+        Pager(PagingConfig(pageSize = LIMIT_DATA)) {
+            ParticipantPagingSource(
+                fireStoreEvent.getAllParticipant(
+                    eventId,
+                    filterField,
+                    LIMIT_DATA.toLong()
+                )
+            )
         }.flow
+
+    fun getFullDataParticipant(
+        eventId: String, filterField: FilterField
+    ) = callbackFlow<Result<List<Participant>>> {
+        trySend(Result.loading())
+        fireStoreEvent.getAllParticipant(eventId, filterField).get()
+            .addOnSuccessListener {
+                if (!it.isEmpty) trySend(
+                    Result.success(
+                        it.toObjects(ParticipantCollection::class.java)
+                            .map { collection -> collection.toParticipant() })
+                )
+                else trySend(Result.failed("There's no participant yet"))
+            }
+            .addOnFailureListener {
+                trySend(Result.failed("Failed to get all data participant"))
+            }
+        awaitClose()
+    }.catch {
+        CreateLog.d("Failed = ${it.message}")
+        emit(Result.failed("Failed to get all data participant"))
+    }.flowOn(Dispatchers.IO)
 
     suspend fun getDetailParticipant(
         eventId: String, participantId: String
@@ -89,6 +118,20 @@ class RemoteDataSource @Inject constructor(
         fireStoreEvent.getDetailParticipant(eventId, participantId) { isSuccess, participant ->
             if (isSuccess) trySend(Result.success(participant.toParticipant()))
             else trySend(Result.failed("Failed get data participant"))
+        }
+        awaitClose()
+    }.catch {
+        CreateLog.d("Failed = ${it.message}")
+        emit(Result.failed("Failed get data participant"))
+    }.flowOn(Dispatchers.IO)
+
+    suspend fun findParticipantByHeader(
+        eventId: String, header: String
+    ) = callbackFlow<Result<Participant>> {
+        trySend(Result.loading())
+        fireStoreEvent.findParticipantByHeader(eventId, header) { isSuccess, participant ->
+            if (isSuccess) trySend(Result.success(participant.toParticipant()))
+            else trySend(Result.failed("Participant is not found"))
         }
         awaitClose()
     }.catch {

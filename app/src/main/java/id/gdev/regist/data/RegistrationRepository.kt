@@ -36,10 +36,20 @@ class RegistrationRepository @Inject constructor(
     ): Flow<PagingData<Participant>> =
         remoteDataSource.getAllParticipant(eventId, filterField)
 
+    override fun getDataAllParticipant(
+        eventId: String,
+        filterField: FilterField
+    ): Flow<Result<List<Participant>>> = remoteDataSource.getFullDataParticipant(eventId, filterField)
+
     override suspend fun getDetailParticipant(
         eventId: String,
         participantId: String
     ): Flow<Result<Participant>> = remoteDataSource.getDetailParticipant(eventId, participantId)
+
+    override suspend fun findParticipantByHeader(
+        eventId: String,
+        header: String
+    ): Flow<Result<Participant>> = remoteDataSource.findParticipantByHeader(eventId, header)
 
     override suspend fun updateCheckInParticipant(
         eventId: String,

@@ -11,6 +11,7 @@ import id.gdev.regist.domain.model.FilterField
 import id.gdev.regist.utils.CreateLog
 import id.gdev.regist.utils.CreateLog.d
 import id.gdev.regist.utils.FilterSort
+import id.gdev.regist.utils.LIMIT_DATA
 
 class FireStoreEvent {
 
@@ -111,15 +112,44 @@ class FireStoreEvent {
 
     }
 
-    fun getAllParticipant(eventId: String, filterField: FilterField): Query {
-        return fireStore.collection(FireStoreDocument.EVENT)
+    fun getAllParticipant(eventId: String, filterField: FilterField, limit: Long? = null): Query {
+        val baseQuery = fireStore.collection(FireStoreDocument.EVENT)
             .document(eventId)
             .collection(FireStoreDocument.EVENT_PARTICIPANT)
             .orderBy(
                 filterField.field,
                 if (filterField.filterSort == FilterSort.ASC) Query.Direction.ASCENDING else Query.Direction.DESCENDING
             )
-            .limit(25)
+        return if (limit!=null) baseQuery.limit(limit) else baseQuery
+    }
+
+    fun findParticipantByHeader(
+        eventId: String,
+        header: String,
+        onResult: (isSuccess: Boolean, participant: ParticipantCollection) -> Unit
+    ){
+        fireStore.collection(FireStoreDocument.EVENT)
+            .document(eventId)
+            .collection(FireStoreDocument.EVENT_PARTICIPANT)
+            .whereEqualTo("header", header)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    CreateLog.d("Listen failed = ${e.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && !snapshot.isEmpty) {
+                    snapshot.toObjects(ParticipantCollection::class.java).let {
+                        if (it.isNotEmpty()) onResult.invoke(true, it.first())
+                        else onResult.invoke(false, ParticipantCollection())
+                    }
+
+                } else {
+                    CreateLog.d("Failed Participant is not found")
+                    CreateLog.d("Snapshot = $snapshot")
+                    onResult.invoke(false, ParticipantCollection())
+                }
+            }
     }
 
     fun getDetailParticipant(

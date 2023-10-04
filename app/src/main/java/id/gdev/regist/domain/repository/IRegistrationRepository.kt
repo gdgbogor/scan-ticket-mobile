@@ -20,8 +20,13 @@ interface IRegistrationRepository {
     ): Flow<Result<String>>
 
     fun getAllParticipant(eventId: String, filterField: FilterField): Flow<PagingData<Participant>>
+    fun getDataAllParticipant(eventId: String, filterField: FilterField): Flow<Result<List<Participant>>>
     suspend fun getDetailParticipant(
         eventId: String, participantId: String
+    ): Flow<Result<Participant>>
+
+    suspend fun findParticipantByHeader(
+        eventId: String, header: String
     ): Flow<Result<Participant>>
 
     suspend fun updateCheckInParticipant(

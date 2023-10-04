@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -41,6 +42,21 @@ fun LoadingNextPageItem(modifier: Modifier) {
             .padding(10.dp)
             .wrapContentWidth(Alignment.CenterHorizontally)
     )
+}
+
+@Composable
+fun EmptyPage(modifier: Modifier = Modifier){
+    Row(
+        modifier = modifier.padding(10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Text(
+            modifier = Modifier.weight(1f),
+            text = "There's no participant yet",
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @Composable

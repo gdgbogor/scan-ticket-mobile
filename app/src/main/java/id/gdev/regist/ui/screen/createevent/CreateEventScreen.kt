@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -43,11 +44,15 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Timestamp
 import id.gdev.regist.domain.model.Event
 import id.gdev.regist.ui.component.DatePickerBuilder
+import id.gdev.regist.ui.component.LargeDropdownMenu
 import id.gdev.regist.ui.component.LoadingDialog
 import id.gdev.regist.ui.component.TimePickerBuilder
 import id.gdev.regist.ui.theme.RegistrationAppTheme
+import id.gdev.regist.utils.BarcodeEncoding
 import id.gdev.regist.utils.TimeUtils.dateSimple
 import id.gdev.regist.utils.TimeUtils.hourMinutes
+import id.gdev.regist.utils.getBarcodeEncoding
+import id.gdev.regist.utils.getList
 import java.util.Calendar
 
 
@@ -60,6 +65,7 @@ fun CreateEventScreen(
 
     var isOpenDatePicker by remember { mutableStateOf(false) }
     var isOpenTimePicker by remember { mutableStateOf(false) }
+    var selectedEncodingIndex by remember { mutableIntStateOf(-1) }
     val context = LocalContext.current
 
     val createEventState by eventViewModel.createEventState.collectAsStateWithLifecycle()
@@ -88,6 +94,10 @@ fun CreateEventScreen(
         mutableStateOf(TextFieldValue(""))
     }
 
+    var barcodeEncoder by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
+
     val eventCalendar by remember { mutableStateOf(Calendar.getInstance()) }
 
     val isFieldValid by remember {
@@ -96,7 +106,8 @@ fun CreateEventScreen(
                 eventName,
                 eventLocation,
                 eventDate,
-                eventTime
+                eventTime,
+                barcodeEncoder
             ).none { it.text.isBlank() }
         }
     }
@@ -140,7 +151,7 @@ fun CreateEventScreen(
                 .fillMaxSize()
                 .padding(it),
         ) {
-            val (name, location, time, button) = createRefs()
+            val (name, location, time, encoding, button) = createRefs()
             OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -232,6 +243,23 @@ fun CreateEventScreen(
                 )
             }
 
+            LargeDropdownMenu(
+                modifier = Modifier.constrainAs(encoding) {
+                    top.linkTo(time.bottom, 16.dp)
+                    start.linkTo(parent.start, 32.dp)
+                    end.linkTo(parent.end, 32.dp)
+                    width = Dimension.fillToConstraints
+                },
+                label = "Barcode Encoding",
+                items = BarcodeEncoding.values().getList(),
+                selectedIndex = selectedEncodingIndex,
+                onItemSelected = { index, _ ->
+                    selectedEncodingIndex = index
+                    barcodeEncoder = TextFieldValue(BarcodeEncoding.values().getList()[index])
+//                    setupViewModel.updateParticipantHeader(csvHeader[index])
+                },
+            )
+
             Button(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -246,6 +274,7 @@ fun CreateEventScreen(
                         Event(
                             "", eventName.text, eventLocation.text,
                             Timestamp(eventCalendar.time),
+                            barcodeEncoder.text.getBarcodeEncoding(),
                             0, 0
                         )
                     )

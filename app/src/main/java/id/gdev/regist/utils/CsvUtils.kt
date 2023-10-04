@@ -39,7 +39,11 @@ fun Context.shareCsv(eventName: String, listParticipant: List<Participant>) {
     val csvFile = File(getStorageDirectory(), eventName.toFileName.plus(".csv"))
     val writer = CSVWriterBuilder(FileWriter(csvFile)).withSeparator('\t').build()
     val header = listParticipant.first().fullData.keys.reversed().sorted().toMutableList()
-        .apply { add(CsvField.IsAttended) }.toTypedArray()
+        .apply {
+            this.any { it == CsvField.CheckInDate }
+                .let {contain -> if (!contain) add(CsvField.CheckInDate) }
+            add(CsvField.IsAttended)
+        }.toTypedArray()
     writer.writeNext(header)
     listParticipant.subList(1, listParticipant.size - 1).forEach { participant ->
         val sortedMap = mutableMapOf<String, String>()
