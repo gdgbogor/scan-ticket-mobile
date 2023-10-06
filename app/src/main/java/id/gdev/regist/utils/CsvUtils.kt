@@ -9,6 +9,7 @@ import com.opencsv.CSVReaderBuilder
 import com.opencsv.CSVWriterBuilder
 import id.gdev.regist.BuildConfig
 import id.gdev.regist.domain.model.Participant
+import id.gdev.regist.utils.CreateLog.d
 import id.gdev.regist.utils.TimeUtils.formatFile
 import java.io.File
 import java.io.FileWriter
@@ -33,6 +34,15 @@ object CsvField {
     const val TicketNumber = "Ticket number"
     const val UserId = "User ID"
     const val AttendedId = "Attendee ID"
+}
+
+fun Participant.getQrData(barcodeEncoding: String): String {
+    CreateLog.d("getQrData = $this")
+    return when (barcodeEncoding) {
+        BarcodeEncoding.NONE.name -> this.header
+        BarcodeEncoding.GDG.name -> "${this.fullData[CsvField.UserId]}:${this.fullData[CsvField.AttendedId]}"
+        else -> this.header
+    }
 }
 
 fun Context.shareCsv(eventName: String, listParticipant: List<Participant>) {

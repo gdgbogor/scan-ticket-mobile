@@ -6,6 +6,7 @@ import androidx.paging.PagingData
 import id.gdev.regist.data.Result
 import id.gdev.regist.data.paging.ParticipantPagingSource
 import id.gdev.regist.data.source.remote.collection.EventCollection
+import id.gdev.regist.data.source.remote.collection.OptionalCheckInCollection
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
 import id.gdev.regist.data.source.remote.collection.toEvent
 import id.gdev.regist.data.source.remote.collection.toParticipant
@@ -137,6 +138,22 @@ class RemoteDataSource @Inject constructor(
     }.catch {
         CreateLog.d("Failed = ${it.message}")
         emit(Result.failed("Failed get data participant"))
+    }.flowOn(Dispatchers.IO)
+
+    suspend fun updateOptionalCheckIn(
+        eventId: String, participantId: String,
+        optionalCheckInCollection: List<OptionalCheckInCollection>
+    ) = callbackFlow<Result<String>> {
+        trySend(Result.loading())
+        fireStoreEvent.updateOptionalCheckIn(
+            eventId, participantId, optionalCheckInCollection
+        ) { isSuccess, message ->
+            if (isSuccess) trySend(Result.success(message))
+            else trySend(Result.failed(message))
+        }
+    }.catch {
+        CreateLog.d("Failed = ${it.message}")
+        emit(Result.failed("Failed update optional check in participant"))
     }.flowOn(Dispatchers.IO)
 
     suspend fun updateCheckInParticipant(

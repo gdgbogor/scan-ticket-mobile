@@ -3,6 +3,7 @@ package id.gdev.regist.data
 import androidx.paging.PagingData
 import id.gdev.regist.data.source.remote.RemoteDataSource
 import id.gdev.regist.data.source.remote.ValueUpdate
+import id.gdev.regist.data.source.remote.collection.OptionalCheckInCollection
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
 import id.gdev.regist.domain.model.Event
 import id.gdev.regist.domain.model.FilterField
@@ -57,5 +58,12 @@ class RegistrationRepository @Inject constructor(
         valueUpdate: ValueUpdate
     ): Flow<Result<String>> =
         remoteDataSource.updateCheckInParticipant(eventId, participantId, valueUpdate)
+
+    override suspend fun updateOptionalCheckInParticipant(
+        eventId: String,
+        participantId: String,
+        optionalCheckInCollection: List<OptionalCheckInCollection>
+    ): Flow<Result<String>> =
+        remoteDataSource.updateOptionalCheckIn(eventId, participantId, optionalCheckInCollection)
 
 }

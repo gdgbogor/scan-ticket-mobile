@@ -3,6 +3,7 @@ package id.gdev.regist.domain.repository
 import androidx.paging.PagingData
 import id.gdev.regist.data.Result
 import id.gdev.regist.data.source.remote.ValueUpdate
+import id.gdev.regist.data.source.remote.collection.OptionalCheckInCollection
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
 import id.gdev.regist.domain.model.Event
 import id.gdev.regist.domain.model.FilterField
@@ -31,5 +32,11 @@ interface IRegistrationRepository {
 
     suspend fun updateCheckInParticipant(
         eventId: String, participantId: String, valueUpdate: ValueUpdate
+    ): Flow<Result<String>>
+
+    suspend fun updateOptionalCheckInParticipant(
+        eventId: String,
+        participantId: String,
+        optionalCheckInCollection: List<OptionalCheckInCollection>
     ): Flow<Result<String>>
 }

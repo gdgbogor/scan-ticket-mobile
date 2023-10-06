@@ -24,8 +24,8 @@ import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +59,7 @@ import id.gdev.regist.ui.screen.main.MainArg
 import id.gdev.regist.utils.CsvField
 import id.gdev.regist.utils.DottedShape
 import id.gdev.regist.utils.PopMessage
+import id.gdev.regist.utils.getQrData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +76,12 @@ fun DetailParticipantScreen(
                 ?.savedStateHandle?.get<String>(MainArg.EVENT_ID) ?: ""
         )
     }
+    val barcodeEncoding by remember {
+        mutableStateOf(
+            navController.previousBackStackEntry
+                ?.savedStateHandle?.get<String>(MainArg.EVENT_ENCODING) ?: ""
+        )
+    }
 
     val participantId by remember {
         mutableStateOf(
@@ -86,6 +92,7 @@ fun DetailParticipantScreen(
 
     val popMessage = PopMessage(LocalContext.current)
     var isDetailOpen by remember { mutableStateOf(true) }
+    var isDetailCheckInOpen by remember { mutableStateOf(true) }
 
     LaunchedEffect(eventId, participantId) {
         if (eventId.isNotBlank() && participantId.isNotBlank()) {
@@ -231,6 +238,65 @@ fun DetailParticipantScreen(
                         }
                     }
                 }
+                if (participant.optionalCheckIn.isNotEmpty()) item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    modifier = Modifier.weight(1f),
+                                    text = "Optional Check-In",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                IconButton(onClick = {
+                                    isDetailCheckInOpen = !isDetailCheckInOpen
+                                }) {
+                                    Icon(
+                                        imageVector = if (isDetailCheckInOpen) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                                        contentDescription = ""
+                                    )
+                                }
+                            }
+                            AnimatedVisibility(visible = isDetailCheckInOpen) {
+                                Column {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Box(
+                                        Modifier
+                                            .height(1.dp)
+                                            .fillMaxWidth()
+                                            .background(
+                                                Color.Gray,
+                                                shape = DottedShape(step = 10.dp)
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    participant.optionalCheckIn.forEach { optCheck ->
+                                        Row(
+                                            verticalAlignment = CenterVertically
+                                        ) {
+                                            Text(
+                                                modifier = Modifier.weight(1f),
+                                                text = optCheck.label
+                                            )
+                                            Checkbox(
+                                                checked = optCheck.checkIn == true,
+                                                onCheckedChange = { changes ->
+                                                    detailParticipantViewModel.updateOptionalCheckIn(
+                                                        eventId, participantId, optCheck, changes
+                                                    )
+                                                })
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -239,13 +305,15 @@ fun DetailParticipantScreen(
                         Text(text = "QR Code", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         Card {
-                            Image(
-                                modifier = Modifier.padding(8.dp),
-                                painter = rememberQrBitmapPainter(
-                                    content = "${fullData[CsvField.UserId]}:${fullData[CsvField.AttendedId]}",
-                                    size = 200.dp
-                                ), contentDescription = ""
-                            )
+                            AnimatedVisibility(visible = participant.id.isNotBlank()) {
+                                Image(
+                                    modifier = Modifier.padding(8.dp),
+                                    painter = rememberQrBitmapPainter(
+                                        content = participant.getQrData(barcodeEncoding),
+                                        size = 200.dp
+                                    ), contentDescription = ""
+                                )
+                            }
                         }
                     }
                 }

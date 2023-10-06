@@ -8,7 +8,6 @@ import id.gdev.regist.data.Result
 import id.gdev.regist.domain.model.Event
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 

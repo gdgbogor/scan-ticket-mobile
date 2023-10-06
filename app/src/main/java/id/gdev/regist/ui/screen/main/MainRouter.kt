@@ -12,6 +12,7 @@ object MainArg{
     fun getArg(arg: String) = "/{$arg}"
     fun setArg(arg: String) = "/${arg}"
     const val EVENT_ID = "event_id"
+    const val EVENT_ENCODING = "event_encoding"
     const val PARTICIPANT_ID = "participant_id"
     const val SETUP_ARG = "csv_header"
     const val PARTICIPANT_DATA = "participant_data"

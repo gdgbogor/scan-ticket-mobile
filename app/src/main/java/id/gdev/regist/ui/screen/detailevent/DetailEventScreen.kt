@@ -52,7 +52,6 @@ import id.gdev.regist.utils.Filter
 import id.gdev.regist.utils.PopMessage
 import id.gdev.regist.utils.decode
 import id.gdev.regist.utils.readCSV
-import id.gdev.regist.utils.shareCsv
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,6 +86,7 @@ fun DetailEventScreen(
         if (isParticipantFound.first) {
             navController.currentBackStackEntry?.savedStateHandle?.apply {
                 set(MainArg.EVENT_ID, eventId)
+                set(MainArg.EVENT_ENCODING, event.barcodeEncoding.name)
                 set(MainArg.PARTICIPANT_ID, isParticipantFound.second)
             }
             detailEventViewModel.clearSearch()

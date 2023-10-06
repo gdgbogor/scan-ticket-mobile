@@ -6,12 +6,12 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import id.gdev.regist.data.source.remote.collection.EventCollection
+import id.gdev.regist.data.source.remote.collection.OptionalCheckInCollection
 import id.gdev.regist.data.source.remote.collection.ParticipantCollection
 import id.gdev.regist.domain.model.FilterField
 import id.gdev.regist.utils.CreateLog
 import id.gdev.regist.utils.CreateLog.d
 import id.gdev.regist.utils.FilterSort
-import id.gdev.regist.utils.LIMIT_DATA
 
 class FireStoreEvent {
 
@@ -194,6 +194,31 @@ class FireStoreEvent {
             .addOnFailureListener {
                 CreateLog.d("onFailure = ${it.message}")
                 onResult.invoke(false, "Failed update total participant")
+            }
+    }
+
+    fun updateOptionalCheckIn(
+        eventId: String,
+        participantId: String,
+        optionalCheckInCollection: List<OptionalCheckInCollection>,
+        onResult: (isSuccess: Boolean, message: String) -> Unit
+    ) {
+        fireStore.collection(FireStoreDocument.EVENT)
+            .document(eventId)
+            .collection(FireStoreDocument.EVENT_PARTICIPANT)
+            .document(participantId)
+            .update(
+                mapOf(
+                    "optionalCheckIn" to optionalCheckInCollection,
+                    "lastCheckInTime" to Timestamp.now()
+                )
+            )
+            .addOnSuccessListener {
+                onResult.invoke(true, "Success update optional check in participant")
+            }
+            .addOnFailureListener {
+                CreateLog.d("onFailure = ${it.message}")
+                onResult.invoke(false, "Failed update optional check in participant")
             }
     }
 

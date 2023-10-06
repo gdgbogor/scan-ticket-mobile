@@ -17,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SetupViewModel @Inject constructor(
     private val registrationRepository: RegistrationRepository
-): ViewModel() {
+) : ViewModel() {
 
     private var participant = Participant(
         "",
@@ -27,16 +27,18 @@ class SetupViewModel @Inject constructor(
         mapOf()
     )
 
-    private val _previewParticipant = MutableStateFlow(Participant(
-        "",
-        DefaultSetup.INIT_HEADER,
-        DefaultSetup.INIT_TITLE,
-        DefaultSetup.INIT_SUBTITLE,
-        mapOf()
-    ))
+    private val _previewParticipant = MutableStateFlow(
+        Participant(
+            "",
+            DefaultSetup.INIT_HEADER,
+            DefaultSetup.INIT_TITLE,
+            DefaultSetup.INIT_SUBTITLE,
+            mapOf()
+        )
+    )
     val previewParticipant get() = _previewParticipant.asStateFlow()
 
-    fun updatePreviewParticipant(header: String, title: String, subtitle: String){
+    fun updatePreviewParticipant(header: String, title: String, subtitle: String) {
         val newValue = previewParticipant.value.copy(
             header = header,
             title = title,
@@ -47,9 +49,17 @@ class SetupViewModel @Inject constructor(
 
     fun getCurrentParticipant() = participant
 
-    fun updateParticipantHeader(header: String){ participant.header = header }
-    fun updateParticipantTitle(title: String){ participant.title = title }
-    fun updateParticipantSubTitle(subtitle: String){ participant.subtitle = subtitle }
+    fun updateParticipantHeader(header: String) {
+        participant.header = header
+    }
+
+    fun updateParticipantTitle(title: String) {
+        participant.title = title
+    }
+
+    fun updateParticipantSubTitle(subtitle: String) {
+        participant.subtitle = subtitle
+    }
 
     private var _isLoading = MutableStateFlow(false)
     val isLoading get() = _isLoading.asStateFlow()
