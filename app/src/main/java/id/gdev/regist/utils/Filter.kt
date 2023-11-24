@@ -30,7 +30,7 @@ fun String.getBarcodeEncoding(): BarcodeEncoding {
 fun Barcode.decode(barcodeEncoding: BarcodeEncoding): String {
     return when(barcodeEncoding){
         BarcodeEncoding.NONE -> this.rawValue.toString()
-        BarcodeEncoding.GDG -> this.rawValue.toString().split(":").last()
+        BarcodeEncoding.GDG -> "GOOGA23"+this.rawValue.toString().split(":").last()
     }
 }
 

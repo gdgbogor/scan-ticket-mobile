@@ -1,19 +1,24 @@
 package id.gdev.regist.ui.screen.setup
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -86,6 +92,8 @@ fun SetupScreen(
     var selectedHeaderIndex by remember { mutableIntStateOf(-1) }
     var selectedTitleIndex by remember { mutableIntStateOf(-1) }
     var selectedSubtitleIndex by remember { mutableIntStateOf(-1) }
+
+    var selectedTicketType by remember { mutableIntStateOf(-1) }
 
     var listCheck by remember { mutableStateOf(emptyList<OptionalCheckIn>()) }
     var isListCheckValid by remember { mutableStateOf(true) }
@@ -177,7 +185,8 @@ fun SetupScreen(
                 }
                 item {
                     Column(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
 
                         LargeDropdownMenu(
@@ -189,8 +198,6 @@ fun SetupScreen(
                                 setupViewModel.updateParticipantHeader(csvHeader[index])
                             },
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         LargeDropdownMenu(
                             label = "Title",
                             items = csvHeader,
@@ -200,8 +207,6 @@ fun SetupScreen(
                                 setupViewModel.updateParticipantTitle(csvHeader[index])
                             },
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         LargeDropdownMenu(
                             label = "Subtitle",
                             items = csvHeader,
@@ -211,6 +216,39 @@ fun SetupScreen(
                                 setupViewModel.updateParticipantSubTitle(csvHeader[index])
                             },
                         )
+                        LargeDropdownMenu(
+                            label = "Ticket Type",
+                            items = csvHeader,
+                            selectedIndex = selectedTicketType,
+                            onItemSelected = { index, _ ->
+                                selectedTicketType = index
+                            },
+                        )
+                        AnimatedVisibility(visible = selectedTicketType != -1) {
+                            var listTicket = mutableListOf<String>()
+                            listOfItem.forEach { data ->
+                                data[csvHeader[selectedTicketType]]?.let { ticket ->
+                                    listTicket.add(ticket)
+                                }
+                            }
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(8.dp)
+                            ) {
+                                items(listTicket.distinct()) { ticketType ->
+                                    Card {
+                                        Text(
+                                            modifier = Modifier.padding(
+                                                vertical = 4.dp,
+                                                horizontal = 8.dp
+                                            ),
+                                            text = ticketType
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                     }
                 }
                 item {
@@ -294,6 +332,7 @@ fun SetupScreen(
                                 item[currentParticipant.title] ?: "",
                                 item[currentParticipant.subtitle] ?: "",
                                 optionalCheckIn = listCheck.map { check -> check.toCollection() },
+                                ticketTypeKey = item[csvHeader[selectedTicketType]],
                                 fullData = item
                             )
                         )

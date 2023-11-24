@@ -13,6 +13,7 @@ data class Participant(
     var fullData: Map<String, String>,
     var partnership: Boolean? = false,
     var checkIn: Boolean? = false,
+    var ticketTypeKey: String? = null,
     var optionalCheckIn: List<OptionalCheckIn> = listOf(),
     var lastCheckInTime: Timestamp? = Timestamp.now()
 ) {

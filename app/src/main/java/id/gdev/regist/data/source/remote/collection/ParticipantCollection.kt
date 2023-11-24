@@ -12,6 +12,7 @@ data class ParticipantCollection(
     var fullData: Map<String, String>? = null,
     var partnership: Boolean? = false,
     var checkIn: Boolean? = false,
+    var ticketTypeKey: String? = null,
     var optionalCheckIn: List<OptionalCheckInCollection>? = null,
     var lastCheckInTime: Timestamp? = Timestamp.now(),
 
@@ -37,6 +38,7 @@ fun ParticipantCollection.toParticipant() = Participant(
     this.fullData ?: mapOf(),
     this.partnership ?: false,
     this.checkIn ?: false,
+    this.ticketTypeKey?:"",
     this.optionalCheckIn?.map { it.toData() } ?: listOf(),
     this.lastCheckInTime
 )

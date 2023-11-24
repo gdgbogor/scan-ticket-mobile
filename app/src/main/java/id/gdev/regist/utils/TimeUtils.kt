@@ -29,6 +29,14 @@ object TimeUtils {
         val sdf = SimpleDateFormat("yyyy-MM-dd HH.mm.ss", Locale.getDefault())
         return sdf.format(this.toDate())
     }
+
+    val Timestamp.pastEvent get() : Boolean {
+        return System.currentTimeMillis() > this.toDate().time
+    }
+
+    val Timestamp.upComingEvent get() : Boolean {
+        return System.currentTimeMillis() <= this.toDate().time
+    }
 }
 
 val String.toFileName get(): String {
